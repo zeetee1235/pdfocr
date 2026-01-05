@@ -2,11 +2,11 @@
 PDF를 페이지별 이미지로 변환하는 모듈
 """
 from pathlib import Path
-from typing import List, Union
+from typing import List
 
 from pdf2image import convert_from_path
 
-PathLike = Union[str, Path]
+from pdfocr.types import PathLike
 
 
 def _ensure_output_dir(output_dir: Path) -> None:

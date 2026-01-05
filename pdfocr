@@ -3,15 +3,12 @@
 PDFOCR - PDF to Text Extraction CLI Tool
 어디서든 사용 가능한 CLI 도구
 """
-import os
-import sys
+import runpy
+from pathlib import Path
 
-# 스크립트의 실제 위치를 찾아서 모듈 경로에 추가
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, SCRIPT_DIR)
-
-# main 모듈 임포트 및 실행
-from main import main
 
 if __name__ == "__main__":
-    main()
+    repo_root = Path(__file__).resolve().parent
+    src_dir = repo_root / "src"
+    # 실행 시 import 경로를 패키지 루트로 맞추고 CLI 엔트리 실행
+    runpy.run_path(str(src_dir / "pdfocr" / "main.py"), run_name="__main__")
