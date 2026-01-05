@@ -155,8 +155,10 @@ echo "【3단계】 Python 패키지 설치"
 echo "------------------------------------------"
 
 if [ -f "requirements.txt" ]; then
+    echo "pip, setuptools, wheel 업그레이드 중..."
+    pip install --upgrade pip setuptools wheel
+    echo ""
     echo "requirements.txt에서 패키지 설치 중..."
-    pip install --upgrade pip
     pip install -r requirements.txt
     echo -e "${GREEN}✓ Python 패키지 설치 완료${NC}"
     echo ""

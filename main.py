@@ -3,17 +3,61 @@
 PDF → 이미지 → 텍스트 추출 파이프라인
 수업 자료 PDF를 텍스트로 변환하여 LaTeX 문서 작성을 위한 전처리 수행
 """
-import os
-import sys
 import argparse
 import glob
-from pdf_to_image import convert_pdf_to_images
+import os
+import sys
+import tempfile
+from pathlib import Path
+from typing import Iterable, List, Sequence
+
 from image_to_text import extract_text_from_images, save_extracted_text
+from pdf_to_image import convert_pdf_to_images
+
+PathLike = Path | str
 
 
-def process_single_pdf(pdf_path: str, 
-                       output_dir: str = None,
-                       image_dir: str = None,
+def _resolve_pdf_path(pdf_path: PathLike) -> Path:
+    path = Path(pdf_path).expanduser().resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"PDF 파일을 찾을 수 없습니다: {pdf_path}")
+    return path
+
+
+def _resolve_output_dir(pdf_path: Path, output_dir: PathLike | None) -> Path:
+    if output_dir is None:
+        return pdf_path.parent
+    return Path(output_dir).expanduser().resolve()
+
+
+def _resolve_image_dir(image_dir: PathLike | None) -> tuple[Path, bool]:
+    if image_dir is None:
+        temp_path = Path(tempfile.mkdtemp(prefix="pdf2txt_"))
+        return temp_path, True
+    return Path(image_dir).expanduser().resolve(), False
+
+
+def _cleanup_images(image_paths: Sequence[str], image_dir: Path, remove_dir: bool) -> None:
+    print("🗑️  임시 이미지 파일 삭제 중...")
+    for img_path in image_paths:
+        try:
+            Path(img_path).unlink(missing_ok=True)
+        except Exception as exc:
+            print(f"  경고: {img_path} 삭제 실패 - {exc}")
+
+    if remove_dir:
+        try:
+            if image_dir.exists() and not any(image_dir.iterdir()):
+                image_dir.rmdir()
+        except Exception:
+            pass
+
+    print("✓ 임시 파일 정리 완료\n")
+
+
+def process_single_pdf(pdf_path: PathLike,
+                       output_dir: PathLike | None = None,
+                       image_dir: PathLike | None = None,
                        lang: str = "kor",
                        dpi: int = 300,
                        keep_images: bool = False):
@@ -31,25 +75,12 @@ def process_single_pdf(pdf_path: str,
     Returns:
         str: 생성된 텍스트 파일 경로
     """
-    # PDF 파일의 절대 경로 가져오기
-    pdf_path = os.path.abspath(pdf_path)
-    pdf_dir = os.path.dirname(pdf_path)
-    
-    # output_dir이 지정되지 않으면 PDF와 같은 디렉토리에 생성
-    if output_dir is None:
-        output_dir = pdf_dir
-    else:
-        output_dir = os.path.abspath(output_dir)
-    
-    # image_dir이 지정되지 않으면 임시 디렉토리 사용
-    if image_dir is None:
-        import tempfile
-        image_dir = tempfile.mkdtemp(prefix="pdf2txt_")
-    else:
-        image_dir = os.path.abspath(image_dir)
+    pdf_path = _resolve_pdf_path(pdf_path)
+    output_dir = _resolve_output_dir(pdf_path, output_dir)
+    image_dir, is_temp_dir = _resolve_image_dir(image_dir)
     
     print("\n" + "="*80)
-    print(f"PDF 처리 시작: {os.path.basename(pdf_path)}")
+    print(f"PDF 처리 시작: {pdf_path.name}")
     print(f"위치: {pdf_path}")
     print(f"출력 디렉토리: {output_dir}")
     print("="*80 + "\n")
@@ -59,8 +90,8 @@ def process_single_pdf(pdf_path: str,
     print("-"*80)
     try:
         image_paths = convert_pdf_to_images(pdf_path, output_dir=image_dir, dpi=dpi)
-    except Exception as e:
-        print(f"✗ PDF 변환 실패: {e}")
+    except Exception as exc:
+        print(f"✗ PDF 변환 실패: {exc}")
         return None
     
     # 2단계: 이미지 → 텍스트 추출
@@ -68,39 +99,25 @@ def process_single_pdf(pdf_path: str,
     print("-"*80)
     try:
         text_results = extract_text_from_images(image_paths, lang=lang)
-    except Exception as e:
-        print(f"✗ OCR 추출 실패: {e}")
+    except Exception as exc:
+        print(f"✗ OCR 추출 실패: {exc}")
         return None
     
     # 3단계: 텍스트 파일 저장
     print("【3단계】 텍스트 파일 저장")
     print("-"*80)
-    pdf_basename = os.path.splitext(os.path.basename(pdf_path))[0]
-    output_path = os.path.join(output_dir, f"{pdf_basename}_extracted.txt")
+    pdf_basename = pdf_path.stem
+    output_path = Path(output_dir) / f"{pdf_basename}_extracted.txt"
     
     try:
         save_extracted_text(text_results, output_path)
-    except Exception as e:
-        print(f"✗ 파일 저장 실패: {e}")
+    except Exception as exc:
+        print(f"✗ 파일 저장 실패: {exc}")
         return None
     
     # 임시 이미지 파일 정리
     if not keep_images:
-        print("🗑️  임시 이미지 파일 삭제 중...")
-        for img_path in image_paths:
-            try:
-                os.remove(img_path)
-            except Exception as e:
-                print(f"  경고: {img_path} 삭제 실패 - {e}")
-        
-        # 임시 디렉토리였다면 디렉토리도 삭제
-        try:
-            if os.path.exists(image_dir) and not os.listdir(image_dir):
-                os.rmdir(image_dir)
-        except Exception:
-            pass
-        
-        print("✓ 임시 파일 정리 완료\n")
+        _cleanup_images(image_paths, image_dir, is_temp_dir)
     
     print("="*80)
     print(f"✅ 처리 완료!")
@@ -110,9 +127,9 @@ def process_single_pdf(pdf_path: str,
     return output_path
 
 
-def process_multiple_pdfs(pdf_paths: list,
-                         output_dir: str = None,
-                         image_dir: str = None,
+def process_multiple_pdfs(pdf_paths: Sequence[PathLike],
+                         output_dir: PathLike | None = None,
+                         image_dir: PathLike | None = None,
                          lang: str = "kor",
                          dpi: int = 300,
                          keep_images: bool = False,
@@ -135,8 +152,8 @@ def process_multiple_pdfs(pdf_paths: list,
     if merge and output_dir is None:
         output_dir = os.getcwd()
     
-    output_files = []
-    all_texts = []
+    output_files: List[Path] = []
+    all_texts: List[str] = []
     
     for i, pdf_path in enumerate(pdf_paths, start=1):
         print(f"\n>>> [{i}/{len(pdf_paths)}] 처리 중...")
@@ -150,21 +167,19 @@ def process_multiple_pdfs(pdf_paths: list,
         )
         
         if output_file:
-            output_files.append(output_file)
-            
-            # 병합 옵션이 활성화된 경우 텍스트 수집
+            output_files.append(Path(output_file))
             if merge:
                 with open(output_file, 'r', encoding='utf-8') as f:
                     all_texts.append(f.read())
     
     # 병합된 파일 생성
     if merge and all_texts:
-        merged_path = os.path.join(output_dir, "merged_all_texts.txt")
+        merged_path = Path(output_dir) / "merged_all_texts.txt"
         print(f"\n📚 모든 텍스트를 하나의 파일로 병합 중...")
-        with open(merged_path, 'w', encoding='utf-8') as f:
+        with merged_path.open('w', encoding='utf-8') as f:
             for i, text in enumerate(all_texts, start=1):
                 f.write(f"\n{'#'*80}\n")
-                f.write(f"# 문서 {i}: {os.path.basename(pdf_paths[i-1])}\n")
+                f.write(f"# 문서 {i}: {Path(pdf_paths[i-1]).name}\n")
                 f.write(f"{'#'*80}\n\n")
                 f.write(text)
                 f.write("\n\n")
@@ -173,6 +188,31 @@ def process_multiple_pdfs(pdf_paths: list,
     print("\n" + "="*80)
     print(f"✅ 전체 처리 완료! (성공: {len(output_files)}/{len(pdf_paths)})")
     print("="*80)
+
+
+def _collect_valid_pdfs(patterns: Iterable[str]) -> List[Path]:
+    expanded: list[str] = []
+    for pattern in patterns:
+        if "*" in pattern or "?" in pattern:
+            expanded.extend(glob.glob(pattern))
+        else:
+            expanded.append(pattern)
+
+    valid: List[Path] = []
+    seen: set[Path] = set()
+
+    for raw_path in expanded:
+        resolved = Path(raw_path).expanduser().resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+
+        if resolved.exists():
+            valid.append(resolved)
+        else:
+            print(f"경고: 파일을 찾을 수 없습니다 - {raw_path}")
+
+    return sorted(valid, key=lambda p: str(p))
 
 
 def main():
@@ -243,25 +283,8 @@ def main():
     
     args = parser.parse_args()
     
-    # PDF 파일 목록 확장 (glob 패턴 지원)
-    pdf_paths = []
-    for pattern in args.pdf_files:
-        if '*' in pattern or '?' in pattern:
-            pdf_paths.extend(glob.glob(pattern))
-        else:
-            pdf_paths.append(pattern)
-    
-    # 중복 제거 및 정렬
-    pdf_paths = sorted(list(set(pdf_paths)))
-    
-    # 파일 존재 확인
-    valid_pdfs = []
-    for pdf_path in pdf_paths:
-        if os.path.exists(pdf_path):
-            valid_pdfs.append(pdf_path)
-        else:
-            print(f"경고: 파일을 찾을 수 없습니다 - {pdf_path}")
-    
+    valid_pdfs = _collect_valid_pdfs(args.pdf_files)
+     
     if not valid_pdfs:
         print("오류: 처리할 PDF 파일이 없습니다.")
         sys.exit(1)
