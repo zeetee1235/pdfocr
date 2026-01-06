@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-PDF → 이미지 → 텍스트 추출 파이프라인
-수업 자료 PDF를 텍스트로 변환하여 LaTeX 문서 작성을 위한 전처리 수행
+PDF to Image to Text extraction pipeline.
 """
 import argparse
 import glob
+import logging
 import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import Iterable, List, Sequence
@@ -14,11 +15,18 @@ from pdfocr.image_to_text import extract_text_from_images, save_extracted_text
 from pdfocr.pdf_to_image import convert_pdf_to_images
 from pdfocr.types import PathLike
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s'
+)
+logger = logging.getLogger(__name__)
+
 
 def _resolve_pdf_path(pdf_path: PathLike) -> Path:
     path = Path(pdf_path).expanduser().resolve()
     if not path.exists():
-        raise FileNotFoundError(f"PDF 파일을 찾을 수 없습니다: {pdf_path}")
+        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
     return path
 
 
@@ -36,12 +44,12 @@ def _resolve_image_dir(image_dir: PathLike | None) -> tuple[Path, bool]:
 
 
 def _cleanup_images(image_paths: Sequence[str], image_dir: Path, remove_dir: bool) -> None:
-    print("🗑️  임시 이미지 파일 삭제 중...")
+    logger.debug("Cleaning up temporary image files...")
     for img_path in image_paths:
         try:
             Path(img_path).unlink(missing_ok=True)
         except Exception as exc:
-            print(f"  경고: {img_path} 삭제 실패 - {exc}")
+            logger.warning(f"Failed to delete {img_path}: {exc}")
 
     if remove_dir:
         try:
@@ -50,7 +58,7 @@ def _cleanup_images(image_paths: Sequence[str], image_dir: Path, remove_dir: boo
         except Exception:
             pass
 
-    print("✓ 임시 파일 정리 완료\n")
+    logger.debug("Cleanup completed")
 
 
 def process_single_pdf(pdf_path: PathLike,
@@ -60,67 +68,62 @@ def process_single_pdf(pdf_path: PathLike,
                        dpi: int = 300,
                        keep_images: bool = False):
     """
-    단일 PDF 파일 처리 파이프라인
+    Process a single PDF file through the OCR pipeline.
     
     Args:
-        pdf_path (str): PDF 파일 경로
-        output_dir (str): 텍스트 출력 디렉토리 (None이면 PDF와 같은 디렉토리)
-        image_dir (str): 임시 이미지 저장 디렉토리 (None이면 임시 디렉토리 사용)
-        lang (str): OCR 언어 (기본값: "kor")
-        dpi (int): 이미지 해상도
-        keep_images (bool): 처리 후 이미지 보존 여부
+        pdf_path: Path to PDF file
+        output_dir: Output directory for text (defaults to PDF directory)
+        image_dir: Directory for temporary images (defaults to temp directory)
+        lang: OCR language code (default: "kor")
+        dpi: Image resolution
+        keep_images: Keep images after processing
     
     Returns:
-        str: 생성된 텍스트 파일 경로
+        Path to generated text file
     """
     pdf_path = _resolve_pdf_path(pdf_path)
     output_dir = _resolve_output_dir(pdf_path, output_dir)
     image_dir, is_temp_dir = _resolve_image_dir(image_dir)
     
-    print("\n" + "="*80)
-    print(f"PDF 처리 시작: {pdf_path.name}")
-    print(f"위치: {pdf_path}")
-    print(f"출력 디렉토리: {output_dir}")
-    print("="*80 + "\n")
+    print("=" * 80)
+    print(f"Processing: {pdf_path.name}")
+    print(f"Location: {pdf_path}")
+    print(f"Output: {output_dir}")
+    print("=" * 80)
     
-    # 1단계: PDF → 이미지 변환
-    print("【1단계】 PDF → 이미지 변환")
-    print("-"*80)
+    # Step 1: PDF to Image
+    print("\n[1/3] Converting PDF to images...")
     try:
         image_paths = convert_pdf_to_images(pdf_path, output_dir=image_dir, dpi=dpi)
     except Exception as exc:
-        print(f"✗ PDF 변환 실패: {exc}")
+        print(f"Error: PDF conversion failed - {exc}")
         return None
     
-    # 2단계: 이미지 → 텍스트 추출
-    print("【2단계】 이미지 → 텍스트 OCR 추출")
-    print("-"*80)
+    # Step 2: Image to Text OCR
+    print("[2/3] Extracting text via OCR...")
     try:
         text_results = extract_text_from_images(image_paths, lang=lang)
     except Exception as exc:
-        print(f"✗ OCR 추출 실패: {exc}")
+        print(f"Error: OCR extraction failed - {exc}")
         return None
     
-    # 3단계: 텍스트 파일 저장
-    print("【3단계】 텍스트 파일 저장")
-    print("-"*80)
+    # Step 3: Save text file
+    print("[3/3] Saving text file...")
     pdf_basename = pdf_path.stem
     output_path = Path(output_dir) / f"{pdf_basename}_extracted.txt"
     
     try:
         save_extracted_text(text_results, output_path)
     except Exception as exc:
-        print(f"✗ 파일 저장 실패: {exc}")
+        print(f"Error: File save failed - {exc}")
         return None
     
-    # 임시 이미지 파일 정리
+    # Cleanup temporary images
     if not keep_images:
         _cleanup_images(image_paths, image_dir, is_temp_dir)
     
-    print("="*80)
-    print(f"✅ 처리 완료!")
-    print(f"📝 출력 파일: {output_path}")
-    print("="*80 + "\n")
+    print(f"\nCompleted: {output_path}")
+    print("=" * 80 + "\n")
     
     return output_path
 
@@ -133,20 +136,20 @@ def process_multiple_pdfs(pdf_paths: Sequence[PathLike],
                          keep_images: bool = False,
                          merge: bool = False):
     """
-    여러 PDF 파일 일괄 처리
+    Process multiple PDF files in batch.
     
     Args:
-        pdf_paths (list): PDF 파일 경로 리스트
-        output_dir (str): 텍스트 출력 디렉토리 (None이면 각 PDF와 같은 디렉토리)
-        image_dir (str): 임시 이미지 저장 디렉토리
-        lang (str): OCR 언어
-        dpi (int): 이미지 해상도
-        keep_images (bool): 처리 후 이미지 보존 여부
-        merge (bool): 모든 텍스트를 하나의 파일로 병합할지 여부
+        pdf_paths: List of PDF file paths
+        output_dir: Output directory for text files
+        image_dir: Directory for temporary images
+        lang: OCR language code
+        dpi: Image resolution
+        keep_images: Keep images after processing
+        merge: Merge all texts into one file
     """
-    print(f"\n총 {len(pdf_paths)}개의 PDF 파일 처리 예정\n")
+    print(f"\nProcessing {len(pdf_paths)} PDF file(s)\n")
     
-    # merge 옵션이 켜져있고 output_dir이 지정되지 않았으면 현재 디렉토리 사용
+    # Use current directory if merge is enabled but output_dir is not specified
     if merge and output_dir is None:
         output_dir = Path.cwd()
     
@@ -154,7 +157,7 @@ def process_multiple_pdfs(pdf_paths: Sequence[PathLike],
     all_texts: List[str] = []
     
     for i, pdf_path in enumerate(pdf_paths, start=1):
-        print(f"\n>>> [{i}/{len(pdf_paths)}] 처리 중...")
+        print(f"\n[{i}/{len(pdf_paths)}] Processing...")
         output_file = process_single_pdf(
             pdf_path,
             output_dir=output_dir,
@@ -170,21 +173,21 @@ def process_multiple_pdfs(pdf_paths: Sequence[PathLike],
                 with open(output_file, 'r', encoding='utf-8') as f:
                     all_texts.append(f.read())
     
-    # 병합된 파일 생성
+    # Create merged file
     if merge and all_texts:
         merged_path = Path(output_dir) / "merged_all_texts.txt"
-        print(f"\n📚 모든 텍스트를 하나의 파일로 병합 중...")
+        print(f"\nMerging all texts into one file...")
         with merged_path.open('w', encoding='utf-8') as f:
             for i, text in enumerate(all_texts, start=1):
                 f.write(f"\n{'#'*80}\n")
-                f.write(f"# 문서 {i}: {Path(pdf_paths[i-1]).name}\n")
+                f.write(f"# Document {i}: {Path(pdf_paths[i-1]).name}\n")
                 f.write(f"{'#'*80}\n\n")
                 f.write(text)
                 f.write("\n\n")
-        print(f"✓ 병합 파일 생성: {merged_path}\n")
+        print(f"Merged file created: {merged_path}\n")
     
     print("\n" + "="*80)
-    print(f"✅ 전체 처리 완료! (성공: {len(output_files)}/{len(pdf_paths)})")
+    print(f"Completed: {len(output_files)}/{len(pdf_paths)} successful")
     print("="*80)
 
 
@@ -208,75 +211,75 @@ def _collect_valid_pdfs(patterns: Iterable[str]) -> List[Path]:
         if resolved.exists():
             valid.append(resolved)
         else:
-            print(f"경고: 파일을 찾을 수 없습니다 - {raw_path}")
+            logger.warning(f"File not found: {raw_path}")
 
     return sorted(valid, key=lambda p: str(p))
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="PDF를 텍스트로 변환하는 파이프라인 (수업 자료 → LaTeX 전처리)",
+        description="PDF to Text extraction pipeline using OCR",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-사용 예시:
-  # 단일 PDF 처리
-  python main.py lecture1.pdf
+Examples:
+  # Process single PDF
+  pdfocr lecture1.pdf
   
-  # 여러 PDF 처리
-  python main.py lecture1.pdf lecture2.pdf lecture3.pdf
+  # Process multiple PDFs
+  pdfocr lecture1.pdf lecture2.pdf lecture3.pdf
   
-  # 디렉토리의 모든 PDF 처리
-  python main.py pdfs/*.pdf
+  # Process all PDFs in directory
+  pdfocr pdfs/*.pdf
   
-  # 모든 텍스트를 하나의 파일로 병합
-  python main.py pdfs/*.pdf --merge
+  # Merge all texts into one file
+  pdfocr pdfs/*.pdf --merge
   
-  # 이미지 파일 보존 (디버깅용)
-  python main.py lecture.pdf --keep-images
+  # Keep images for debugging
+  pdfocr lecture.pdf --keep-images
         """
     )
     
     parser.add_argument(
         'pdf_files',
         nargs='+',
-        help='처리할 PDF 파일 경로 (여러 개 가능)'
+        help='PDF file path(s) to process'
     )
     
     parser.add_argument(
         '-o', '--output-dir',
         default=None,
-        help='텍스트 출력 디렉토리 (기본값: PDF와 같은 디렉토리)'
+        help='Output directory for text files (default: same as PDF)'
     )
     
     parser.add_argument(
         '-i', '--image-dir',
         default=None,
-        help='임시 이미지 저장 디렉토리 (기본값: 자동 생성된 임시 디렉토리)'
+        help='Directory for temporary images (default: auto-generated temp directory)'
     )
     
     parser.add_argument(
         '-l', '--lang',
         default='kor',
-        help='OCR 언어 코드 (기본값: kor - 한국어)'
+        help='OCR language code (default: kor)'
     )
     
     parser.add_argument(
         '-d', '--dpi',
         type=int,
         default=300,
-        help='이미지 변환 해상도 (기본값: 300)'
+        help='Image resolution (default: 300)'
     )
     
     parser.add_argument(
         '--keep-images',
         action='store_true',
-        help='처리 후 이미지 파일 보존 (기본값: 삭제)'
+        help='Keep images after processing (default: delete)'
     )
     
     parser.add_argument(
         '--merge',
         action='store_true',
-        help='모든 텍스트를 하나의 파일로 병합'
+        help='Merge all texts into one file'
     )
     
     args = parser.parse_args()
@@ -284,10 +287,10 @@ def main():
     valid_pdfs = _collect_valid_pdfs(args.pdf_files)
      
     if not valid_pdfs:
-        print("오류: 처리할 PDF 파일이 없습니다.")
+        print("Error: No PDF files to process")
         sys.exit(1)
     
-    # 파이프라인 실행
+    # Run pipeline
     if len(valid_pdfs) == 1:
         process_single_pdf(
             valid_pdfs[0],
