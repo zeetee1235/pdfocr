@@ -4,6 +4,12 @@ PDF to text extraction CLI tool using OCR pipeline.
 
 **Command**: `pdfocr`
 
+## Documentation
+
+- Quick Start Guide: [English](docs/QUICKSTART.md) | [한국어](docs/QUICKSTART.ko.md)
+- Architecture: [English](docs/ARCHITECTURE.md) | [한국어](docs/ARCHITECTURE.ko.md)
+- Development Guide: [English](docs/DEVELOPMENT.md) | [한국어](docs/DEVELOPMENT.ko.md)
+
 ## Overview
 
 Extracts text from PDF documents through a **PDF → Image → Text** pipeline.
@@ -63,15 +69,29 @@ python main.py ~/Documents/lecture.pdf
 
 ```
 pdfocr/
-├── pdfocr                  # CLI executable (symlink target)
-├── main.py                 # Main pipeline entry point
-├── pdf_to_image.py         # PDF to image converter
-├── image_to_text.py        # Image to text OCR module
-├── requirements.txt        # Python dependencies
-├── setup.sh               # Environment setup script
-├── install.sh             # CLI installation script
-├── README.md
-└── .gitignore
+├── docs/                   # Documentation
+│   ├── QUICKSTART.md      # Quick reference guide
+│   └── note.md            # Development notes
+├── src/                   # Source code
+│   └── pdfocr/           # Main package
+│       ├── __init__.py
+│       ├── main.py        # Pipeline entry point
+│       ├── pdf_to_image.py    # PDF converter
+│       ├── image_to_text.py   # OCR module
+│       ├── layout.py      # Layout analysis
+│       ├── block_ocr.py   # Block-based OCR
+│       └── types.py       # Type definitions
+├── test/                  # Test files
+│   ├── test_document.tex
+│   ├── test_document.pdf
+│   └── output/           # Test output
+├── pdfocr                 # CLI executable
+├── main.py               # Compatibility wrapper
+├── requirements.txt      # Python dependencies
+├── setup.sh             # Environment setup
+├── install.sh           # CLI installation
+├── test.fish            # Test script
+└── README.md
 ```
 
 ## Requirements
@@ -210,3 +230,11 @@ pip install -r requirements.txt
 ```
 
 The `requirements.txt` uses Pillow >= 11.0.0 which supports Python 3.13.
+
+## Contributing
+
+See [Development Guide](docs/DEVELOPMENT.md) for setup and contribution guidelines.
+
+## License
+
+This project is for educational purposes.
