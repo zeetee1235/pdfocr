@@ -1,107 +1,107 @@
-# PDFOCR CLI 도구 - 빠른 참조 가이드
+# pdfocr - Quick Reference
 
-## 설치
+## Installation
 
 ```bash
-# 1. 환경 설정
+# Setup environment
 ./setup.sh
 
-# 2. CLI 도구 설치 (선택)
+# Install CLI tool (optional)
 ./install.sh
 ```
 
-## 기본 사용법
+## Basic Usage
 
 ```bash
-# 단일 PDF
+# Single PDF
 pdfocr document.pdf
 
-# 여러 PDF
+# Multiple PDFs
 pdfocr file1.pdf file2.pdf file3.pdf
 
-# 와일드카드 사용
+# Wildcards
 pdfocr *.pdf
 pdfocr lectures/*.pdf
 ```
 
-## 다른 디렉토리의 PDF 처리
+## Processing PDFs from Different Locations
 
 ```bash
-# 상위 디렉토리
+# Parent directory
 pdfocr ../document.pdf
 
-# 다른 프로젝트
+# Other project
 pdfocr ../other-project/files/lecture.pdf
 
-# 절대 경로
+# Absolute path
 pdfocr ~/Documents/important.pdf
 pdfocr /home/user/pdfs/report.pdf
 ```
 
-## 출력 제어
+## Output Control
 
 ```bash
-# 출력 디렉토리 지정
+# Specify output directory
 pdfocr document.pdf -o ~/output
 
-# 임시 이미지 보존
+# Keep temporary images
 pdfocr document.pdf --keep-images
 
-# 이미지 디렉토리 지정
+# Specify image directory
 pdfocr document.pdf -i ./temp_images
 ```
 
-## 병합 기능
+## Merge Feature
 
 ```bash
-# 여러 PDF를 하나의 텍스트로
+# Merge multiple PDFs into one text file
 pdfocr lec1.pdf lec2.pdf lec3.pdf --merge
 
-# 다른 위치의 PDF들 병합
+# Merge PDFs from different locations
 pdfocr ../proj1/doc.pdf ../proj2/doc.pdf --merge -o ~/merged
 ```
 
-## OCR 옵션
+## OCR Options
 
 ```bash
-# 고해상도 (더 정확)
+# High resolution (better accuracy)
 pdfocr document.pdf --dpi 600
 
-# 영어 문서
+# English document
 pdfocr document.pdf --lang eng
 
-# 한국어+영어 혼합
+# Mixed Korean + English
 pdfocr document.pdf --lang kor+eng
 ```
 
-## 실제 예시
+## Examples
 
-### 과목별 정리
+### Course Materials
 
 ```bash
-# 수학 강의 노트
+# Math lectures
 pdfocr ~/courses/math/*.pdf --merge -o ~/notes/math
 
-# 물리 강의 노트
+# Physics lectures
 pdfocr ~/courses/physics/*.pdf --merge -o ~/notes/physics
 ```
 
-### 프로젝트 문서 처리
+### Project Documents
 
 ```bash
-# 현재 위치: /home/dev/pdf2txt
-# 다른 프로젝트의 문서 처리
+# Current location: /home/dev/pdfocr
+# Process documents from another project
 pdfocr ../research/papers/*.pdf --merge -o ~/research/extracted
 ```
 
-### 대량 처리
+### Batch Processing
 
 ```bash
-# 여러 디렉토리의 모든 PDF
+# All PDFs from multiple directories
 pdfocr ~/Documents/2024/*/*.pdf --merge -o ~/archive/2024_all.txt
 ```
 
-## 도움말
+## Help
 
 ```bash
 pdfocr --help
