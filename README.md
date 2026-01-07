@@ -18,9 +18,10 @@ Output: `document.txt` in same directory.
 
 - [SIMPLE_USAGE.md](SIMPLE_USAGE.md) - Simplest usage guide
 - [DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md) - Docker quick reference
-- [docs/QUICKSTART.md](docs/QUICKSTART.md) - Full quick start guide
-- [docs/DOCKER.md](docs/DOCKER.md) - Docker deployment guide
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Architecture details
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) | [한국어](docs/QUICKSTART.ko.md) - Quick start guide
+- [docs/DOCKER.md](docs/DOCKER.md) | [한국어](docs/DOCKER.ko.md) - Docker deployment
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | [한국어](docs/ARCHITECTURE.ko.md) - Architecture
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | [한국어](docs/DEVELOPMENT.ko.md) - Development guide
 
 ## Pipeline
 
