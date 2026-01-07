@@ -110,7 +110,7 @@ def process_single_pdf(pdf_path: PathLike,
     # Step 3: Save text file
     print("[3/3] Saving text file...")
     pdf_basename = pdf_path.stem
-    output_path = Path(output_dir) / f"{pdf_basename}_extracted.txt"
+    output_path = Path(output_dir) / f"{pdf_basename}.txt"
     
     try:
         save_extracted_text(text_results, output_path)
@@ -259,8 +259,8 @@ Examples:
     
     parser.add_argument(
         '-l', '--lang',
-        default='kor',
-        help='OCR language code (default: kor)'
+        default='eng+kor',
+        help='OCR language code (default: eng+kor)'
     )
     
     parser.add_argument(

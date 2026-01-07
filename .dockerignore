@@ -1,0 +1,16 @@
+.venv
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.log
+*.aux
+*.out
+images/
+test/output/
+test/debug_images/
+.git
+.gitignore
+Dockerfile
+.dockerignore

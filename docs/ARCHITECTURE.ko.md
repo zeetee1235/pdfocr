@@ -1,123 +1,37 @@
-# 아키텍처
+# 아키텍처 및 개발 가이드
 
-## 개요
+## 파이프라인 개요
+- PDF → 이미지 변환(pdf2image/poppler)
+- 이미지 → 텍스트 추출(pytesseract/Tesseract)
+- 페이지별 텍스트 파일 저장, 필요 시 병합 출력
 
-pdfocr는 OCR(광학 문자 인식)을 사용하여 PDF 문서에서 텍스트를 추출하는 명령줄 도구입니다. 파이프라인은 세 가지 주요 단계로 구성됩니다:
+## 주요 모듈
+- `src/pdfocr/main.py`: CLI 진입점, 인자 파싱, 경로 해석, 파이프라인 오케스트레이션.
+- `src/pdfocr/pdf_to_image.py`: PDF를 PNG로 변환, DPI 설정 지원.
+- `src/pdfocr/image_to_text.py`: 이미지 단위 OCR, 다국어 지원, 페이지별 텍스트 저장.
+- `src/pdfocr/layout.py`: OpenCV 기반 블록 감지, 블록 시각화.
+- `src/pdfocr/block_ocr.py`: 감지된 블록 단위 OCR → JSON 출력.
+- `src/pdfocr/types.py`: 공통 경로 타입 정의.
 
-1. **PDF to Image 변환** - PDF 페이지를 고해상도 PNG 이미지로 변환
-2. **OCR 처리** - Tesseract OCR을 사용하여 이미지에서 텍스트 추출
-3. **텍스트 출력** - 적절한 형식으로 추출된 텍스트 저장
+## 개발 환경
+1) 시스템 의존성: poppler-utils, tesseract-ocr(+kor).  
+2) Python: `./setup.sh` 또는 venv 생성 후 `pip install -r requirements.txt`.  
+3) 실행 확인: `python main.py --help`, `./test.fish` (샘플 PDF 변환).
 
-## 모듈 구조
+## 코드 스타일 요약
+- 들여쓰기 4칸, 최대 줄 길이 120자.
+- 임포트 순서: 표준 → 서드파티 → 로컬.
+- 함수/클래스/상수는 snake_case/PascalCase/UPPER_SNAKE_CASE.
+- Docstring은 간단히 목적/인자/반환/예외만 기술.
 
-### 핵심 모듈
+## 테스트/검증
+- 통합 테스트: `./test.fish` (PDF→이미지→텍스트, 블록 디버그 포함).
+- Docker 환경: `docker build -t pdfocr .` 후 `docker compose run --rm pdfocr /work/test/test_document.pdf -o /work/test/output --lang eng+kor --keep-images`.
 
-#### `src/pdfocr/main.py`
-CLI 애플리케이션의 메인 진입점.
-- 명령줄 인자 파싱
-- 파이프라인 조율
-- 파일 경로 해석
-- 진행 상황 보고
-
-**주요 함수:**
-- `process_single_pdf()` - 단일 PDF 파일 처리
-- `process_multiple_pdfs()` - 병합 옵션이 있는 일괄 처리
-- `main()` - 인자 파싱이 있는 CLI 진입점
-
-#### `src/pdfocr/pdf_to_image.py`
-pdf2image(poppler 래퍼)를 사용한 PDF to Image 변환.
-
-**주요 함수:**
-- `convert_pdf_to_images()` - PDF 페이지를 PNG 이미지로 변환
-  - 내부적으로 poppler의 `pdftoppm` 사용
-  - 설정 가능한 DPI (기본값: 300)
-  - 이미지 경로 목록 반환
-
-**의존성:**
-- `pdf2image` - poppler용 Python 래퍼
-- `poppler-utils` - PDF 렌더링용 시스템 패키지
-
-#### `src/pdfocr/image_to_text.py`
-pytesseract(Tesseract 래퍼)를 사용한 OCR 텍스트 추출.
-
-**주요 함수:**
-- `extract_text_from_image()` - 단일 이미지에서 텍스트 추출
-- `extract_text_from_images()` - 여러 이미지에서 일괄 추출
-- `save_extracted_text()` - 결과를 형식화된 텍스트 파일로 저장
-
-**기능:**
-- 다국어 지원 (기본값: 한국어)
-- 추출 실패에 대한 오류 처리
-- 페이지별로 구분된 출력 형식
-
-**의존성:**
-- `pytesseract` - Tesseract용 Python 래퍼
-- `Pillow` - 이미지 처리
-- `tesseract-ocr` - OCR 엔진용 시스템 패키지
-
-### 고급 모듈
-
-#### `src/pdfocr/layout.py`
-OpenCV를 사용한 레이아웃 분석 및 블록 감지.
-
-**주요 함수:**
-- `detect_blocks()` - 이미지에서 텍스트 블록 감지
-- `draw_blocks()` - 감지된 블록 시각화
-- 블록 감지를 위한 형태학적 연산 사용
-
-**사용 사례:**
-- 복잡한 문서 레이아웃
-- 다단 텍스트
-- 표 추출
-
-#### `src/pdfocr/block_ocr.py`
-복잡한 레이아웃에서 더 나은 정확도를 위한 블록 기반 OCR.
-
-**주요 함수:**
-- `extract_blocks_to_json()` - 위치 데이터와 함께 텍스트 블록 추출
-- 블록 좌표와 텍스트가 포함된 JSON 출력
-
-**사용 사례:**
-- 공간 정보 보존
-- 구조화된 문서 파싱
-- 레이아웃 인식 텍스트 추출
-
-## 실행 흐름
-
-### 단일 PDF 처리
-
-```
-사용자 입력
-    ↓
-명령줄 파서 (main.py)
-    ↓
-경로 해석 및 유효성 검사
-    ↓
-PDF to Image (pdf_to_image.py)
-    ↓
-OCR 추출 (image_to_text.py)
-    ↓
-텍스트 파일 출력
-    ↓
-정리 (선택사항)
-```
-
-### 일괄 처리
-
-```
-여러 PDF 파일
-    ↓
-각 PDF에 대해:
-    ├─→ 이미지로 변환
-    ├─→ 텍스트 추출
-    └─→ 개별 파일 저장
-        ↓
-    (선택) 모든 텍스트 병합
-        ↓
-    병합된 파일 출력
-```
-
-## 설정
+## 개발 워크플로우
+- 기능 설계 후 브랜치 생성(`git checkout -b feature/...`).
+- 구현 시 오류 처리/로그 출력/경로 해석 일관성 유지.
+- 커밋: 작은 단위로, 메시지는 `feat/fix/chore` 등 간단 태그 + 내용.
 
 ### 환경 변수
 현재 사용되지 않음.

@@ -1,240 +1,185 @@
 # pdfocr
 
-PDF to text extraction CLI tool using OCR pipeline.
-
-**Command**: `pdfocr`
-
-## Documentation
-
-- Quick Start Guide: [English](docs/QUICKSTART.md) | [한국어](docs/QUICKSTART.ko.md)
-- Architecture: [English](docs/ARCHITECTURE.md) | [한국어](docs/ARCHITECTURE.ko.md)
-- Development Guide: [English](docs/DEVELOPMENT.md) | [한국어](docs/DEVELOPMENT.ko.md)
-
-## Overview
-
-Extracts text from PDF documents through a **PDF → Image → Text** pipeline.
-
-### Process
-1. **PDF to Image**: Convert each page to PNG using pdf2image
-2. **OCR Extraction**: Extract text using pytesseract with Tesseract OCR
-3. **Text Output**: Save UTF-8 encoded text files with page markers
+PDF to text extraction CLI tool using OCR.
 
 ## Quick Start
 
-### 1. Setup
+```bash
+# Build Docker image
+docker build -t pdfocr .
+
+# Process PDF
+docker compose run --rm pdfocr /work/path/to/document.pdf
+```
+
+Output: `document.txt` in same directory.
+
+## Documentation
+
+- [SIMPLE_USAGE.md](SIMPLE_USAGE.md) - Simplest usage guide
+- [DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md) - Docker quick reference
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) - Full quick start guide
+- [docs/DOCKER.md](docs/DOCKER.md) - Docker deployment guide
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Architecture details
+
+## Pipeline
+
+1. PDF to Image: Convert pages to PNG (pdf2image)
+2. OCR: Extract text (Tesseract OCR)
+3. Output: Save as UTF-8 text file
+
+## Local Installation
+
+### Setup
 
 ```bash
-cd /home/dev/pdfocr
 chmod +x setup.sh
 ./setup.sh
 ```
 
-The setup script automatically:
-- Installs system dependencies (poppler, tesseract)
-- Creates Python virtual environment
-- Installs Python packages
-- Creates working directories
+Installs dependencies, creates virtual environment, installs packages.
 
-### 2. Install CLI Tool (Optional)
-
-To use `pdfocr` command from anywhere:
+### Install CLI (Optional)
 
 ```bash
 ./install.sh
 ```
 
-Installation options:
-- **System-wide** (`/usr/local/bin`) - All users
-- **User local** (`~/.local/bin`) - Current user only
-- **Development mode** - Symlink only
+Options: system-wide, user-local, or development mode.
 
-### 3. Usage
+## Docker Usage
+
+### Basic
+
+```bash
+# Build
+docker build -t pdfocr .
+
+# Run
+docker compose run --rm pdfocr /work/document.pdf
+```
+
+### With Options
+
+```bash
+# Custom output directory
+docker compose run --rm pdfocr /work/document.pdf -o /work/output
+
+# Multiple files
+docker compose run --rm pdfocr /work/pdfs/*.pdf --merge
+
+# Custom language (default: eng+kor)
+docker compose run --rm pdfocr /work/document.pdf --lang kor
+
+# Keep images for debugging
+docker compose run --rm pdfocr /work/document.pdf --keep-images
+```
+
+## CLI Usage
+
+After installation:
+
+```bash
+# Simple
+pdfocr document.pdf
+
+# Multiple files
+pdfocr *.pdf --merge
+
+# Custom output
+pdfocr document.pdf -o ./output
+```
+
+# Keep images for debugging
+docker compose run --rm pdfocr /work/document.pdf --keep-images -i /work/images
+
+# All options
+docker compose run --rm pdfocr \
+  /work/test/test_document.pdf \
+  -o /work/test/output \
+  --keep-images -i /work/images \
+  --lang eng+kor --dpi 300
+```
+
+**Key Points**:
+- 📁 Output saves to **same directory** as PDF by default
+- 📄 Creates `filename.txt` from `filename.pdf`
+- 🗂️ Use `/work/...` paths inside container
+- 💾 All files persist on your host filesystem
+
+See [Docker Documentation](docs/DOCKER.md) ([한국어](docs/DOCKER.ko.md)) for detailed usage.
+
+### 4. Usage
+
+#### Docker (simplest, no installation):
+
+```bash
+# Just specify the PDF - output auto-saves to same directory
+docker compose run --rm pdfocr /work/path/to/document.pdf
+
+# With options
+docker compose run --rm pdfocr /work/document.pdf -o /work/output --lang eng+kor
+```
 
 #### After CLI installation:
 
 ```bash
+# Simple - creates document.txt in same directory
 pdfocr ~/Documents/lecture.pdf
-pdfocr /path/to/document.pdf
-pdfocr ../pdfs/*.pdf --merge
-```
 
-#### Direct execution:
+# Multiple files
+pdfocr /path/to/*.pdf --merge
 
-```bash
-source venv/bin/activate
-python main.py ~/Documents/lecture.pdf
+# Custom output directory
+pdfocr document.pdf -o ./output
 ```
 
 ## Project Structure
 
 ```
 pdfocr/
-├── docs/                   # Documentation
-│   ├── QUICKSTART.md      # Quick reference guide
-│   └── note.md            # Development notes
-├── src/                   # Source code
-│   └── pdfocr/           # Main package
-│       ├── __init__.py
-│       ├── main.py        # Pipeline entry point
-│       ├── pdf_to_image.py    # PDF converter
-│       ├── image_to_text.py   # OCR module
-│       ├── layout.py      # Layout analysis
-│       ├── block_ocr.py   # Block-based OCR
-│       └── types.py       # Type definitions
-├── test/                  # Test files
-│   ├── test_document.tex
-│   ├── test_document.pdf
-│   └── output/           # Test output
-├── pdfocr                 # CLI executable
-├── main.py               # Compatibility wrapper
-├── requirements.txt      # Python dependencies
+├── src/pdfocr/          # Main package
+│   ├── main.py          # Pipeline entry point
+│   ├── pdf_to_image.py  # PDF converter
+│   ├── image_to_text.py # OCR module
+│   ├── layout.py        # Layout analysis
+│   └── block_ocr.py     # Block-based OCR
+├── docs/                # Documentation
+├── test/                # Test files
+├── pdfocr               # CLI executable
+├── requirements.txt     # Python dependencies
 ├── setup.sh             # Environment setup
-├── install.sh           # CLI installation
-├── test.fish            # Test script
-└── README.md
+└── docker-compose.yml   # Docker config
 ```
 
 ## Requirements
 
-### System Packages
-- **poppler-utils**: PDF to image conversion
-- **tesseract-ocr**: OCR engine
-- **tesseract-langpack-kor**: Korean language pack
+System: poppler-utils, tesseract-ocr
+Python: pdf2image, pytesseract, Pillow, opencv-python
 
-### Python Packages
-- `pdf2image`: PDF to image conversion
-- `pytesseract`: Tesseract OCR wrapper
-- `Pillow`: Image processing
-- `opencv-python`: Image preprocessing
-- `numpy`: Numerical operations
+## CLI Options
 
-## Usage
-
-### Basic
-
-```bash
-pdfocr <PDF_FILE>
-# or
-python main.py <PDF_FILE>
 ```
-
-### Multiple Files
-
-```bash
-pdfocr file1.pdf file2.pdf
-pdfocr ../lectures/*.pdf
-pdfocr ~/Documents/study/*.pdf --merge
-```
-
-### Options
-
-```bash
 pdfocr [OPTIONS] <PDF_FILES...>
 
 Options:
-  -h, --help            Show help message
   -o, --output-dir DIR  Output directory (default: same as PDF)
-  -i, --image-dir DIR   Temporary image directory (default: auto)
-  -l, --lang LANG       OCR language code (default: kor)
+  -i, --image-dir DIR   Temporary image directory
+  -l, --lang LANG       OCR language (default: eng+kor)
   -d, --dpi DPI         Image resolution (default: 300)
-  --keep-images         Keep images after processing
-  --merge              Merge all texts into one file
+  --keep-images         Keep temporary images
+  --merge              Merge all outputs into one file
 ```
 
-### Examples
+## Examples
 
 ```bash
-# Specify output directory
-pdfocr document.pdf -o ~/output
+# Basic
+pdfocr document.pdf
 
-# High resolution for better OCR
-pdfocr document.pdf --dpi 600
+# Multiple files
+pdfocr *.pdf --merge
 
-# Keep images for debugging
-pdfocr lecture.pdf --keep-images -i ./temp_images
-
-# English document
-pdfocr document.pdf --lang eng
-
-# Merge multiple PDFs
-pdfocr file1.pdf file2.pdf file3.pdf --merge -o ~/merged
+# Custom options
+pdfocr document.pdf -o ./output --dpi 600 --keep-images
 ```
-
-## Output Format
-
-Generated text files follow this format:
-
-```
-================================================================================
-Page 1: document_page_001.png
-================================================================================
-
-[Extracted text from page 1]
-
-
-================================================================================
-Page 2: document_page_002.png
-================================================================================
-
-[Extracted text from page 2]
-
-...
-```
-
-## Troubleshooting
-
-### Tesseract not found
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install tesseract-ocr tesseract-ocr-kor
-
-# Fedora/RHEL
-sudo dnf install tesseract tesseract-langpack-kor
-
-# macOS
-brew install tesseract tesseract-lang
-```
-
-### pdftoppm not found
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install poppler-utils
-
-# Fedora/RHEL
-sudo dnf install poppler-utils
-
-# macOS
-brew install poppler
-```
-
-### Korean language not working
-
-```bash
-# Check installed languages
-tesseract --list-langs
-
-# If 'kor' is missing, install it
-sudo apt-get install tesseract-ocr-kor      # Ubuntu/Debian
-sudo dnf install tesseract-langpack-kor     # Fedora/RHEL
-```
-
-### Python 3.13 compatibility
-
-If you encounter Pillow build errors on Python 3.13:
-
-```bash
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
-```
-
-The `requirements.txt` uses Pillow >= 11.0.0 which supports Python 3.13.
-
-## Contributing
-
-See [Development Guide](docs/DEVELOPMENT.md) for setup and contribution guidelines.
-
-## License
-
-This project is for educational purposes.
