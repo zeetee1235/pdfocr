@@ -5,18 +5,11 @@ import json
 from pathlib import Path
 from typing import Dict, List, Sequence
 
-import cv2
 import pytesseract
 
+from pdfocr.image_utils import read_image
 from pdfocr.layout import Block, detect_blocks
 from pdfocr.types import PathLike
-
-
-def _read_image(path: PathLike):
-    image = cv2.imread(str(path), cv2.IMREAD_COLOR)
-    if image is None:
-        raise FileNotFoundError(f"이미지를 읽을 수 없습니다: {path}")
-    return image
 
 
 def ocr_blocks(image_path: PathLike,
@@ -25,7 +18,7 @@ def ocr_blocks(image_path: PathLike,
     """
     감지된 블록 리스트에 대해 OCR을 수행해 구조화된 dict 리스트를 반환한다.
     """
-    image = _read_image(image_path)
+    image = read_image(image_path)
     results: List[Dict] = []
 
     for idx, block in enumerate(blocks, start=1):
