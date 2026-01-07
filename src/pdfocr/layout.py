@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import List, Sequence
 
 import cv2
-import numpy as np
 
+from pdfocr.image_utils import read_image
 from pdfocr.types import PathLike
 
 
@@ -34,9 +34,7 @@ def detect_blocks(image_path: PathLike,
     - 흑백 변환 → 적응형 이진화 → 팽창으로 인접 문자/셀 병합 → 외곽선 감지
     """
     path = Path(image_path)
-    image = cv2.imread(str(path), cv2.IMREAD_COLOR)
-    if image is None:
-        raise FileNotFoundError(f"이미지를 읽을 수 없습니다: {path}")
+    image = read_image(path)
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     thresh = cv2.adaptiveThreshold(
@@ -65,9 +63,7 @@ def draw_blocks(image_path: PathLike, blocks: Sequence[Block], output_path: Path
     감지된 블록을 직사각형으로 표시한 이미지를 저장한다.
     """
     path = Path(image_path)
-    image = cv2.imread(str(path), cv2.IMREAD_COLOR)
-    if image is None:
-        raise FileNotFoundError(f"이미지를 읽을 수 없습니다: {path}")
+    image = read_image(path)
 
     for idx, block in enumerate(blocks, start=1):
         x, y, w, h = block.as_bbox()
