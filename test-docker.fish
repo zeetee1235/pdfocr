@@ -19,8 +19,8 @@ docker run --rm \
 
 echo ""
 echo "==> Docker execution completed!"
-echo "Output: test/docker_output/test_document_extracted.txt"
+echo "Output: test/docker_output/test_document.txt"
 echo "Images: test/docker_images/"
 echo ""
 echo "Compare with local result:"
-echo "  diff test/output/test_document_extracted.txt test/docker_output/test_document_extracted.txt"
+echo "  diff test/output/test_document.txt test/docker_output/test_document.txt"

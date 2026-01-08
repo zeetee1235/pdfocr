@@ -1,5 +1,7 @@
 \documentclass[12pt]{article}
-\usepackage{CJKutf8}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath, amssymb}
@@ -31,8 +33,6 @@
 
 \begin{abstract}
 This document intentionally mixes plain text, mathematical notation, tables, lists, vector drawings, and hyperlinks. It is meant to probe how well the OCR pipeline handles varied layouts, line breaks, and semantic structure.
-
-이 문서는 한글과 영어를 동시에 포함하여 OCR 파이프라인이 다국어 텍스트를 얼마나 잘 처리하는지 테스트합니다. 수식, 표, 목록 등 다양한 레이아웃을 포함합니다.
 \end{abstract}
 
 \section{Overview}
@@ -73,12 +73,9 @@ Nested lists follow:
 \begin{itemize}
   \item Top-level bullet with a hyperlink: \url{https://example.com/data}.
   \item Another bullet with emphasized text and a footnote.\footnote{Footnotes are included to see if ordering is preserved.}
-  \item 한글 항목: 테스트 문서에 한글을 추가하여 다국어 OCR 성능을 확인합니다.
   \item Enumerated sub-tasks:
   \begin{enumerate}
     \item Capture inline math such as $\alpha, \beta, \gamma$.
-    \item 수식과 한글의 혼합: $E = mc^2$ 에너지-질량 등가 원리
-    \item 한글 테스트: 가나다라마바사 아자차카타파하
     \item Handle words split across lines (hyphen- ation).
     \item Keep indentation hints intact.
   \end{enumerate}
@@ -114,25 +111,6 @@ for (int i = 0; i < 5; ++i) {
     printf("w[%d] = %.3f\n", i, w);
 }
 \end{verbatim}
-
-\section{한글 테스트 섹션}
-이 섹션은 한글 OCR 성능을 테스트하기 위해 작성되었습니다. 다양한 한글 문장과 영어를 혼합하여 다국어 처리 능력을 검증합니다.
-
-\subsection{기본 한글 문장}
-가나다라마바사아자차카타파하. 안녕하세요, 이것은 PDF OCR 테스트 문서입니다. 
-한글과 영어 (English and Korean) 를 함께 사용하여 OCR 엔진의 성능을 확인합니다.
-
-\subsection{복잡한 문장}
-대한민국의 수도는 서울이며, 인구는 약 5천만 명입니다. 
-과학 기술이 발전하면서 인공지능(AI)과 머신러닝(Machine Learning)이 중요해졌습니다.
-수식과 함께: 원의 넓이는 $A = \pi r^2$ 입니다.
-
-\subsection{혼합 텍스트}
-\begin{itemize}
-  \item 첫 번째 항목: Python, Java, C++ 등의 프로그래밍 언어
-  \item Second item: 한글과 English mixed text 처리 테스트
-  \item 세 번째 항목: 숫자와 기호 123, \$456, @#\%
-\end{itemize}
 
 \section{Conclusion}
 This concludes the synthetic PDF. Inspect the extracted text for dropped symbols, merged lines, and mis-ordered sections. Compare the OCR output with the known ground truth here to quantify accuracy.

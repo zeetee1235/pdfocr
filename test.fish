@@ -9,7 +9,7 @@ set -l pdf_file test/test_document.pdf
 set -l output_dir test/output
 set -l image_dir test/output/images
 set -l pdf_basename (basename $pdf_file .pdf)
-set -l text_file "$output_dir/$pdf_basename"_extracted.txt
+set -l text_file "$output_dir/$pdf_basename.txt"
 set -l venv_python "$project_dir/.venv/bin/python"
 
 if not test -x $venv_python
