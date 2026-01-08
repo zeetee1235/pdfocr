@@ -16,11 +16,12 @@ Output: `document.txt` in same directory.
 
 ## Documentation
 
-- [SIMPLE_USAGE.md](SIMPLE_USAGE.md) - Simplest usage guide
-- [DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md) - Docker quick reference
+- [docs/SIMPLE_USAGE.md](docs/SIMPLE_USAGE.md) - Simplest usage guide
+- [docs/DOCKER_QUICKSTART.md](docs/DOCKER_QUICKSTART.md) - Docker quick reference
+- [docs/DOCKER_USAGE.md](docs/DOCKER_USAGE.md) - Detailed Docker usage
 - [docs/QUICKSTART.md](docs/QUICKSTART.md) | [한국어](docs/QUICKSTART.ko.md) - Quick start guide
 - [docs/DOCKER.md](docs/DOCKER.md) | [한국어](docs/DOCKER.ko.md) - Docker deployment
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | [한국어](docs/ARCHITECTURE.ko.md) - Architecture
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | [한국어](docs/ARCHITECTURE.ko.md) - Architecture overview
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | [한국어](docs/DEVELOPMENT.ko.md) - Development guide
 
 ## Pipeline
@@ -144,13 +145,24 @@ pdfocr/
 │   ├── pdf_to_image.py  # PDF converter
 │   ├── image_to_text.py # OCR module
 │   ├── layout.py        # Layout analysis
-│   └── block_ocr.py     # Block-based OCR
+│   ├── block_ocr.py     # Block-based OCR
+│   └── types.py         # Type definitions
 ├── docs/                # Documentation
-├── test/                # Test files
+│   ├── SIMPLE_USAGE.md
+│   ├── DOCKER_QUICKSTART.md
+│   ├── DOCKER_USAGE.md
+│   ├── QUICKSTART.md / QUICKSTART.ko.md
+│   ├── DOCKER.md / DOCKER.ko.md
+│   ├── ARCHITECTURE.md / ARCHITECTURE.ko.md
+│   └── DEVELOPMENT.md / DEVELOPMENT.ko.md
+├── test/                # Test files and scripts
 ├── pdfocr               # CLI executable
+├── main.py              # CLI entry point
 ├── requirements.txt     # Python dependencies
 ├── setup.sh             # Environment setup
-└── docker-compose.yml   # Docker config
+├── install.sh           # CLI installation
+├── Dockerfile           # Docker image definition
+└── docker-compose.yml   # Docker compose config
 ```
 
 ## Requirements
